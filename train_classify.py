@@ -106,9 +106,9 @@ def main():
     print(feat_mat)
     with open('digit_feat_map.npy', 'wb') as f:
         np.save(f, feat_mat)
-    # for i, char_class in enumerate(['0', '2', '3', '4', '5', '6', '7', '8', '9']):
-    #     # print(feat_mat[i, :])
-    #     print(char_class, feat_ratio[i], np.argmax(np.dot(feat_mat, feat_mat[i, :])))
+    for i, char_class in enumerate(['0', '2', '3', '4', '5', '6', '7', '8', '9']):
+        # print(feat_mat[i, :])
+        print(char_class, feat_ratio[i], np.argmax(np.dot(feat_mat, feat_mat[i, :])))
 
     print(test_files)
     for test_file in test_files:
