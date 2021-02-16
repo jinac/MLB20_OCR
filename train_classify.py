@@ -1,7 +1,6 @@
 import glob
 import os
 import numpy as np
-from scipy.spatial import distance
 
 import cv2
 
