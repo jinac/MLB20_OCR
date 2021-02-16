@@ -43,10 +43,7 @@ class CharClassifier(object):
             return '.'
         if ratio >= 1.3 and ratio < 2.7:
             digit_features = self.get_features(img)
-            # print(len(digit_features))
-            # print(np.dot(self.feat_mat, digit_features))
             idx = np.argmax(np.dot(self.feat_mat, digit_features))
-            # print(idx)
             return str(self.feat_mat_classes[idx])
         if ratio >= 2.7:
             return '1'
