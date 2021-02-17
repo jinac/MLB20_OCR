@@ -97,8 +97,8 @@ def main():
     parser.add_argument('crop_box', help='bounding box to crop to stats region of image')
 
     # Load image
-    img = cv2.imread('divleague_crop.png')
-    # img = cv2.imread('divleague2_crop.png')
+    img = cv2.imread('source_imgs/divleague_crop.png')
+    # img = cv2.imread('source_imgs/divleague2_crop.png')
     img_bw = preprocess_img(img)
 
     height, width = img_bw.shape
