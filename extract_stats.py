@@ -1,4 +1,6 @@
 """
+python3 extract_stats.py source_imgs/divleague_crop.png 0 0 1140 295
+python3 extract_stats.py source_imgs/divleague2_crop.png 0 0 1141 297
 """
 import argparse
 
@@ -91,16 +93,26 @@ def decode(img, classifier, row):
 
 
 def main():
+    # Load arguments.
     parser = argparse.ArgumentParser(
         description='Script to extract stats from MLB2020 top players screen')
     parser.add_argument('img_filename', help='path of image to extract stats from.')
-    parser.add_argument('crop_box', help='bounding box to crop to stats region of image')
+    parser.add_argument('crop_box', nargs=4, type=int, help='bounding box to crop to stats region of image')
+    args = parser.parse_args()
 
-    # Load image
-    img = cv2.imread('source_imgs/divleague_crop.png')
-    # img = cv2.imread('source_imgs/divleague2_crop.png')
+    img_filename = args.img_filename
+    crop_box = args.crop_box
+
+    # Load image.
+    img = cv2.imread(img_filename)
+
+    # Crop according to crop box.
+    x1, x2 = crop_box[0], crop_box[0] + crop_box[2]
+    y1, y2 = crop_box[1], crop_box[1] + crop_box[3]
+    img = img[y1:y2, x1:x2]
+
+    # Preprocess image.
     img_bw = preprocess_img(img)
-
     height, width = img_bw.shape
 
     # Threshold for numbers.
