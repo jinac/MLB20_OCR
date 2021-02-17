@@ -64,18 +64,11 @@ def filter_rows(bboxes, height, top_y1, top_y2, bottom_y1, bottom_y2):
 
 def main():
     # Load image
-    # img = cv2.imread('divleague_crop.png')
-    img = cv2.imread('divleague2_crop.png')
+    img = cv2.imread('divleague_crop.png')
+    # img = cv2.imread('divleague2_crop.png')
     img_bw = preprocess_img(img)
 
     height, width = img_bw.shape
-    print(img_bw.shape)
-
-    # Crop
-    # y_1, y_2 = int(height / 2 - 1), int(height)
-    # x_1, x_2 = 0, width
-    # img = img[y_1:y_2, x_1:x_2]
-    # print(img.shape)
 
     # Threshold for numbers.
     ret, img_thresh = cv2.threshold(img_bw, 210, 255, cv2.THRESH_BINARY)
@@ -111,15 +104,6 @@ def main():
     axs[1].plot(np.arange(height), hist_y)
     plt.savefig('test/box_pixel_axis_hist1.png')
 
-    # Group boxes by partitions by distance.
-    print(hist_x.mean())
-    print(hist_y.mean())
-
-    x_mean = hist_x.mean()
-    y_mean = hist_y.mean()
-    x_bounds = []
-    y_bounds = []
-
     # Values found in y-axis pixel histogram in MLBScreenOCR.ipynb.
     top_y1 = 0.1694915254237288
     top_y2 = 0.4067796610169492
@@ -128,32 +112,25 @@ def main():
     # top_y1, top_y2 = 50, 120
     # bottom_y1, bottom_y2 = 225, height
     top_row, bottom_row = filter_rows(bboxes, height, top_y1, top_y2, bottom_y1, bottom_y2)
-    # print(len(top_row), len(bottom_row))
     for bbox in top_row:
-        # print(bbox)
         img = cv2.rectangle(img, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (255, 0, 0), thickness=2)
         img_morph_clean = cv2.rectangle(img_morph_clean, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (255, 0, 0), thickness=2)
     for bbox in bottom_row:
-        # print(bbox)
         img = cv2.rectangle(img, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), thickness=2)
         img_morph_clean = cv2.rectangle(img_morph_clean, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), thickness=2)
-
-    # boxes = np.array(bboxes)
-    # for box in boxes:
-    #     print(np.mean(box[:2]), np.mean(box[2:]), box)
 
     # Classify shape to number.
     char_classifier = CharClassifier()
     def decode(img, classifier, row):
         ret_row = []
+        _, w = img.shape
         bbox = row[0]
         cur = [classifier(img[bbox[1]: bbox[3], bbox[0]: bbox[2]])]
         last = row[0][2]
         for bbox in row[1:]:
             char_class = classifier(img[bbox[1]: bbox[3], bbox[0]: bbox[2]])
-            dist = bbox[0] - last
-            print(dist, char_class)
-            if dist < 40:
+            dist = (bbox[0] - last) / w
+            if dist < 0.03508771929824561:
                 cur.append(char_class)
             else:
                 ret_row.append(str(''.join(cur)))
@@ -209,8 +186,8 @@ def main():
     stats = {k: v for k, v in zip(stat_names, stats)}
     print(stats)
 
-    cv2.imwrite('test/thresh_final.jpg', img_morph_clean)
-    cv2.imwrite('test/out.jpg', img)
+    # cv2.imwrite('test/thresh_final.jpg', img_morph_clean)
+    # cv2.imwrite('test/out.jpg', img)
 
 if __name__ == '__main__':
     main()
