@@ -1,3 +1,7 @@
+"""
+"""
+import argparse
+
 import cv2
 import numpy as np
 
@@ -87,6 +91,11 @@ def decode(img, classifier, row):
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description='Script to extract stats from MLB2020 top players screen')
+    parser.add_argument('img_filename', help='path of image to extract stats from.')
+    parser.add_argument('crop_box', help='bounding box to crop to stats region of image')
+
     # Load image
     img = cv2.imread('divleague_crop.png')
     # img = cv2.imread('divleague2_crop.png')
