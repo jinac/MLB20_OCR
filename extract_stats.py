@@ -1,5 +1,12 @@
 """
 MLB2020 OCR stats extraction script.
+
+Note:
+We require a cropping box because the box uses alpha blending
+and it's a PITA to do with traditional thresholding techniques.
+Since the given data is expected to be consistent between images
+for the location of the cropped box to be, we expect it to be manually found
+once and be constant for the user.
 """
 import argparse
 
