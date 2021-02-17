@@ -28,6 +28,10 @@ PITCHER_STATS = ['WIN-LOSS', 'SAVES', 'INNINGS',
                  'K/9', 'BB/9', 'WAR']
 
 def preprocess_img(img):
+    """
+    Preprocess image by converting to grayscale single color channel
+    and applying gaussian blur for later threshold step.
+    """
     img_bw = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img_bw = cv2.medianBlur(img_bw, 5)
     return img_bw
@@ -42,6 +46,9 @@ def morph_clean(img, kernel_shape=(3, 3)):
     return img_morph_clean
 
 def get_numbers_bbox(img):
+    """
+    Get bounding boxes around connected components in thresholded image.
+    """
     ret, img_label = cv2.connectedComponents(img)
     labels = np.unique(img_label)
     boxes = []
@@ -57,6 +64,10 @@ def get_numbers_bbox(img):
     return boxes
 
 def filter_rows(bboxes, height):
+    """
+    Filter out found thresholded items by row heuristics
+    to return only the top row and bottom row bounding boxes.
+    """
     if len(bboxes) > 0:
         top_row = []
         bottom_row = []
@@ -74,6 +85,11 @@ def filter_rows(bboxes, height):
     return top_row, bottom_row
 
 def decode(img, classifier, row):
+    """
+    Use classifier to interpret characters in bounding box
+    and separate characters into sections by horizontal pixel
+    distance heuristic.
+    """
     ret_row = []
     _, w = img.shape
     bbox = row[0]
@@ -92,25 +108,7 @@ def decode(img, classifier, row):
     return ret_row
 
 
-def main():
-    # Load arguments.
-    parser = argparse.ArgumentParser(
-        description='Script to extract stats from MLB2020 top players screen')
-    parser.add_argument('img_filename', help='path of image to extract stats from.')
-    parser.add_argument('crop_box', nargs=4, type=int, help='bounding box to crop to stats region of image')
-    args = parser.parse_args()
-
-    img_filename = args.img_filename
-    crop_box = args.crop_box
-
-    # Load image.
-    img = cv2.imread(img_filename)
-
-    # Crop according to crop box.
-    x1, x2 = crop_box[0], crop_box[0] + crop_box[2]
-    y1, y2 = crop_box[1], crop_box[1] + crop_box[3]
-    img = img[y1:y2, x1:x2]
-
+def extract_stats(img):
     # Preprocess image.
     img_bw = preprocess_img(img)
     height, width = img_bw.shape
@@ -137,8 +135,29 @@ def main():
 
     # Decode numbers and return.
     stats_names = PITCHER_STATS if '-' in stats[0] else HITTER_STATS 
-
     stats = {k: v for k, v in zip(stats_names, stats)}
+    return stats
+
+def main():
+    # Load arguments.
+    parser = argparse.ArgumentParser(
+        description='Script to extract stats from MLB2020 top players screen')
+    parser.add_argument('img_filename', help='path of image to extract stats from.')
+    parser.add_argument('crop_box', nargs=4, type=int, help='bounding box to crop to stats region of image')
+    args = parser.parse_args()
+
+    img_filename = args.img_filename
+    crop_box = args.crop_box
+
+    # Load image.
+    img = cv2.imread(img_filename)
+
+    # Crop according to crop box.
+    x1, x2 = crop_box[0], crop_box[0] + crop_box[2]
+    y1, y2 = crop_box[1], crop_box[1] + crop_box[3]
+    img = img[y1:y2, x1:x2]
+
+    stats = extract_stats(img)
     print(stats)
 
 if __name__ == '__main__':
