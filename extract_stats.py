@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 
+from classify import CharClassifier
+
 def preprocess_img(img):
     img_bw = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img_bw = cv2.medianBlur(img_bw, 5)
@@ -44,10 +46,10 @@ def filter_rows(bboxes, height, top_y1, top_y2, bottom_y1, bottom_y2):
         # Filter for row by heuristic of pixels
         # top_heuristic_y1, top_heuristic_y2 = 50 / height, 120 / height
         # bottom_heuristic_y1, bottom_heuristic_y2 = 225 / height, height / height
-        top_y1 = top_y1 / height
-        top_y2 = top_y2 / height
-        bottom_y1 = bottom_y1 / height
-        bottom_y2 = bottom_y2 / height
+        # top_y1 = top_y1 / height
+        # top_y2 = top_y2 / height
+        # bottom_y1 = bottom_y1 / height
+        # bottom_y2 = bottom_y2 / height
         for bbox in bboxes:
             y1, y2 = bbox[1] / height, bbox[3] / height
             if y1 > top_y1 and y1 < top_y2 and y2 > top_y1 and y2 < top_y2:
@@ -59,52 +61,6 @@ def filter_rows(bboxes, height, top_y1, top_y2, bottom_y1, bottom_y2):
 
     return top_row, bottom_row
 
-
-class NumberClassifier(object):
-    def __init__(self, feature_mat_filename, feature_classnames):
-        self.feature_classes = feature_classnames
-        self.feature_mat = np.load(feature_mat_filename)
-
-    @staticmethod
-    def load_feat_mat(feat_mat_filename):
-        feat_mat = None
-        with open(feat_mat_filename, 'rb') as f:
-            feat_mat = np.load(f.read())
-        return feat_mat
-
-    def classify(self, number_roi):
-        height, width = number_roi.shape
-        ratio = height / width
-        if ratio < 0.5:
-            return CLASS_DICT['dash']
-        if ratio > 0.5 and ratio < 1.3:
-            return CLASS_DICT['dot']
-        if ratio > 1.3 and ratio < 2.7:
-            f = features[1:]
-            # print(f)
-            x = np.argmax(np.dot(feat_mat, features[1:]))
-            # print(x)
-            if x > 0:
-                x += 1
-            return x
-            # return 'a number'
-        if ratio > 2.7:
-            return CLASS_DICT['1']
-
-    def classify_digit(self, number):
-        pass
-
-
-def classify(features):
-    ratio = features[0]
-    if ratio < 0.5:
-        return CLASS_DICT['dash']
-    if ratio > 0.5 and ratio < 1.3:
-        return CLASS_DICT['dot']
-    if ratio > 1.3 and ratio < 2.7:
-        return 'a number'
-    if ratio > 2.7:
-        return CLASS_DICT['1']
 
 def main():
     # Load image
@@ -163,8 +119,13 @@ def main():
     x_bounds = []
     y_bounds = []
 
-    top_y1, top_y2 = 50, 120
-    bottom_y1, bottom_y2 = 225, height
+    # Values found in y-axis pixel histogram in MLBScreenOCR.ipynb.
+    top_y1 = 0.1694915254237288
+    top_y2 = 0.4067796610169492
+    bottom_y1 = 0.7627118644067796
+    bottom_y2 = 1.0
+    # top_y1, top_y2 = 50, 120
+    # bottom_y1, bottom_y2 = 225, height
     top_row, bottom_row = filter_rows(bboxes, height, top_y1, top_y2, bottom_y1, bottom_y2)
     print(len(top_row), len(bottom_row))
     for bbox in top_row:
@@ -181,14 +142,7 @@ def main():
     #     print(np.mean(box[:2]), np.mean(box[2:]), box)
 
     # Classify shape to number.
-    def get_features(bbox, img_h, img_w):
-        h = bbox[3] - bbox[1]
-        w = bbox[2] - bbox[0]
-
-        h_win = img_h / 5
-        w_win = img_w / 3
-
-        feat1 = h / w
+    char_classifier = CharClassifier()
 
     # Decode numbers and return.
 

@@ -1,13 +1,14 @@
 import numpy as np
 
-
 class CharClassifier(object):
-    def __init__(self, feat_mat_filename='digit_feat_map2.npy'):
+    def __init__(self,
+                 feat_mat_filename='digit_feat_map2.npy',
+                 h_div=10, w_div=3, thresh_region=0.6):
         self.feat_mat_filename = feat_mat_filename
         self.feat_mat_classes, self.feat_mat = self.load_feat_mat(feat_mat_filename)
-        self.h_div = 10
-        self.w_div = 3
-        self.thresh_region = 0.6
+        self.h_div = h_div
+        self.w_div = w_div
+        self.thresh_region = thresh_region
 
     def load_feat_mat(self, feat_mat_filename):
         data = np.load(feat_mat_filename)
@@ -35,6 +36,7 @@ class CharClassifier(object):
         return feat_regions
 
     def classify(self, img):
+        # Ratio intervals found in MLBScreenOCR
         h, w = img.shape
         ratio = h / w
         if ratio < 0.5:
