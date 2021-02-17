@@ -91,6 +91,7 @@ def main():
 
     # Organize pixels into shapes, and derive bounding boxes from them.
     bboxes = get_numbers_bbox(img_morph_clean)
+    img_clean = img_morph_clean.copy()
     img_morph_clean = cv2.cvtColor(img_morph_clean, cv2.COLOR_GRAY2RGB)
     hist_x = np.zeros(width)
     hist_y = np.zeros(height)
@@ -127,13 +128,13 @@ def main():
     # top_y1, top_y2 = 50, 120
     # bottom_y1, bottom_y2 = 225, height
     top_row, bottom_row = filter_rows(bboxes, height, top_y1, top_y2, bottom_y1, bottom_y2)
-    print(len(top_row), len(bottom_row))
+    # print(len(top_row), len(bottom_row))
     for bbox in top_row:
-        print(bbox)
+        # print(bbox)
         img = cv2.rectangle(img, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (255, 0, 0), thickness=2)
         img_morph_clean = cv2.rectangle(img_morph_clean, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (255, 0, 0), thickness=2)
     for bbox in bottom_row:
-        print(bbox)
+        # print(bbox)
         img = cv2.rectangle(img, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), thickness=2)
         img_morph_clean = cv2.rectangle(img_morph_clean, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), thickness=2)
 
@@ -143,8 +144,70 @@ def main():
 
     # Classify shape to number.
     char_classifier = CharClassifier()
+    def decode(img, classifier, row):
+        ret_row = []
+        bbox = row[0]
+        cur = [classifier(img[bbox[1]: bbox[3], bbox[0]: bbox[2]])]
+        last = row[0][2]
+        for bbox in row[1:]:
+            char_class = classifier(img[bbox[1]: bbox[3], bbox[0]: bbox[2]])
+            dist = bbox[0] - last
+            print(dist, char_class)
+            if dist < 40:
+                cur.append(char_class)
+            else:
+                ret_row.append(str(''.join(cur)))
+                cur = [char_class]
+            last = bbox[2]
+        ret_row.append(str(''.join(cur)))
+        return ret_row
+
+    stats = decode(img_clean, char_classifier, top_row)
+    hitter = '-' in stats[0]
+    print(stats, hitter)
+    # print('TOP ROW:')
+    # tmp_row = []
+    # cur = []
+    # last = 0
+    # for bbox in top_row:
+    #     char_class = char_classifier(img_clean[bbox[1]: bbox[3], bbox[0]: bbox[2]])
+    #     dist = bbox[0] - last
+    #     if not cur or dist < 90:
+    #         cur.append(char_class)
+    #     else:
+    #         tmp_row.append(str(''.join(cur)))
+    #         cur = [char_class]
+    #     last = bbox[2]
+    #     if char_class == '-':
+    #         hitter = False
+    #     print(char_class)
+    # cur.append(char_class)
+    # tmp_row.append(str(''.join(cur)))
+    # print(tmp_row)
+
+    bottom_row = decode(img_clean, char_classifier, bottom_row)
+    stats.extend(bottom_row)
+    print(bottom_row)
+    # print('BOTTOM ROW:')
+    # for bbox in bottom_row:
+    #     print(char_classifier(img_clean[bbox[1]: bbox[3], bbox[0]: bbox[2]]))
+    # print()
 
     # Decode numbers and return.
+    # TODO: if 'dash', then pitcher, else hitter
+    hitter_stat_names = ['AT-BATS', 'RUNS', 'HR', 'RBI',
+                         'STEALS', 'AVERAGE', 'OBP', 'SLG',
+                         'OPS', 'WAR']
+    pitcher_stat_names = ['WIN-LOSS', 'SAVES', 'INNINGS', 'SO',
+                          'WALKS', 'ERA', 'WHIP',
+                          'K/9', 'BB/9', 'WAR']
+    if hitter:
+        stat_names = hitter_stat_names
+    else:
+        stat_names = pitcher_stat_names
+
+    stats = {k: v for k, v in zip(stat_names, stats)}
+    print(stats)
 
     cv2.imwrite('test/thresh_final.jpg', img_morph_clean)
     cv2.imwrite('test/out.jpg', img)
