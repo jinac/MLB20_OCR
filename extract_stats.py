@@ -1,6 +1,5 @@
 """
-python3 extract_stats.py source_imgs/divleague_crop.png 0 0 1140 295
-python3 extract_stats.py source_imgs/divleague2_crop.png 0 0 1141 297
+MLB2020 OCR stats extraction script.
 """
 import argparse
 
@@ -9,8 +8,7 @@ import numpy as np
 
 from classify import CharClassifier
 
-# top_heuristic_y1, top_heuristic_y2 = 50 / height, 120 / height
-# bottom_heuristic_y1, bottom_heuristic_y2 = 225 / height, height / height
+
 TOP_Y1 = 0.1694915254237288
 TOP_Y2 = 0.4067796610169492
 BOTTOM_Y1 = 0.7627118644067796
