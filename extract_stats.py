@@ -3,6 +3,24 @@ import numpy as np
 
 from classify import CharClassifier
 
+# top_heuristic_y1, top_heuristic_y2 = 50 / height, 120 / height
+# bottom_heuristic_y1, bottom_heuristic_y2 = 225 / height, height / height
+TOP_Y1 = 0.1694915254237288
+TOP_Y2 = 0.4067796610169492
+BOTTOM_Y1 = 0.7627118644067796
+BOTTOM_Y2 = 1.0
+
+BIN_THRESH = 210
+
+PX_DIST = 0.03508771929824561
+
+HITTER_STATS = ['AT-BATS', 'RUNS', 'HR',
+                'RBI', 'STEALS', 'AVERAGE',
+                'OBP', 'SLG', 'OPS', 'WAR']
+PITCHER_STATS = ['WIN-LOSS', 'SAVES', 'INNINGS',
+                 'SO', 'WALKS', 'ERA', 'WHIP',
+                 'K/9', 'BB/9', 'WAR']
+
 def preprocess_img(img):
     img_bw = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img_bw = cv2.medianBlur(img_bw, 5)
@@ -32,23 +50,17 @@ def get_numbers_bbox(img):
         boxes.append([min_x, min_y, max_x, max_y])
     return boxes
 
-def filter_rows(bboxes, height, top_y1, top_y2, bottom_y1, bottom_y2):
+def filter_rows(bboxes, height):
     if len(bboxes) > 0:
         top_row = []
         bottom_row = []
 
         # Filter for row by heuristic of pixels
-        # top_heuristic_y1, top_heuristic_y2 = 50 / height, 120 / height
-        # bottom_heuristic_y1, bottom_heuristic_y2 = 225 / height, height / height
-        # top_y1 = top_y1 / height
-        # top_y2 = top_y2 / height
-        # bottom_y1 = bottom_y1 / height
-        # bottom_y2 = bottom_y2 / height
         for bbox in bboxes:
             y1, y2 = bbox[1] / height, bbox[3] / height
-            if y1 > top_y1 and y1 < top_y2 and y2 > top_y1 and y2 < top_y2:
+            if y1 > TOP_Y1 and y1 < TOP_Y2 and y2 > TOP_Y1 and y2 < TOP_Y2:
                 top_row.append(bbox)
-            if y1 > bottom_y1 and y1 < bottom_y2 and y2 > bottom_y1 and y2 < bottom_y2:
+            if y1 > BOTTOM_Y1 and y1 < BOTTOM_Y2 and y2 > BOTTOM_Y1 and y2 < BOTTOM_Y2:
                 bottom_row.append(bbox)
         top_row.sort(key=lambda x:x[0])
         bottom_row.sort(key=lambda x:x[0])
@@ -64,7 +76,7 @@ def decode(img, classifier, row):
     for bbox in row[1:]:
         char_class = classifier(img[bbox[1]: bbox[3], bbox[0]: bbox[2]])
         dist = (bbox[0] - last) / w
-        if dist < 0.03508771929824561:
+        if dist < PX_DIST:
             cur.append(char_class)
         else:
             ret_row.append(str(''.join(cur)))
@@ -83,7 +95,7 @@ def main():
     height, width = img_bw.shape
 
     # Threshold for numbers.
-    ret, img_thresh = cv2.threshold(img_bw, 210, 255, cv2.THRESH_BINARY)
+    ret, img_thresh = cv2.threshold(img_bw, BIN_THRESH, 255, cv2.THRESH_BINARY)
 
     # Erode and dilate to clean up.
     img_morph_clean = morph_clean(img_thresh)
@@ -94,13 +106,7 @@ def main():
     img_morph_clean = cv2.cvtColor(img_morph_clean, cv2.COLOR_GRAY2RGB)
 
     # Values found in y-axis pixel histogram in MLBScreenOCR.ipynb.
-    top_y1 = 0.1694915254237288
-    top_y2 = 0.4067796610169492
-    bottom_y1 = 0.7627118644067796
-    bottom_y2 = 1.0
-    # top_y1, top_y2 = 50, 120
-    # bottom_y1, bottom_y2 = 225, height
-    top_row, bottom_row = filter_rows(bboxes, height, top_y1, top_y2, bottom_y1, bottom_y2)
+    top_row, bottom_row = filter_rows(bboxes, height)
 
     # Classify shape to number and group by distance to neighboring horizontal box.
     char_classifier = CharClassifier()
@@ -109,19 +115,9 @@ def main():
     stats.extend(bottom_row)
 
     # Decode numbers and return.
-    hitter = '-' in stats[0]
-    hitter_stat_names = ['AT-BATS', 'RUNS', 'HR', 'RBI',
-                         'STEALS', 'AVERAGE', 'OBP', 'SLG',
-                         'OPS', 'WAR']
-    pitcher_stat_names = ['WIN-LOSS', 'SAVES', 'INNINGS', 'SO',
-                          'WALKS', 'ERA', 'WHIP',
-                          'K/9', 'BB/9', 'WAR']
-    if hitter:
-        stat_names = hitter_stat_names
-    else:
-        stat_names = pitcher_stat_names
+    stats_names = PITCHER_STATS if '-' in stats[0] else HITTER_STATS 
 
-    stats = {k: v for k, v in zip(stat_names, stats)}
+    stats = {k: v for k, v in zip(stats_names, stats)}
     print(stats)
 
 if __name__ == '__main__':

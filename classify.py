@@ -1,9 +1,13 @@
 import numpy as np
 
+H_DIV = 10
+W_DIV = 3
+REGION_THRESH = 0.6
+
 class CharClassifier(object):
     def __init__(self,
-                 feat_mat_filename='digit_feat_map2.npy',
-                 h_div=10, w_div=3, thresh_region=0.6):
+                 feat_mat_filename='digit_feat_map.npy',
+                 h_div=H_DIV, w_div=W_DIV, thresh_region=REGION_THRESH):
         self.feat_mat_filename = feat_mat_filename
         self.feat_mat_classes, self.feat_mat = self.load_feat_mat(feat_mat_filename)
         self.h_div = h_div
